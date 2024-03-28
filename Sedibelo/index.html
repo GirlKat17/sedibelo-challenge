@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Insights</title>
+  <!-- Vue.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: rgba(0, 0, 0, 0.884);
+    }
+     /* Hero header styling */
+    #hero-header {
+      background-image: url('https://thomsonreuters.scene7.com/is/image/thomsonreutersPROD/tr1130923-2880x710:Hero-s?ts=1591900457701');
+      background-size: cover;
+      background-position: center;
+      color: #171616;
+      text-align: center;
+      padding: 100px 0;
+      width: 100%;
+    }
+    #hero-header h1 {
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+    #hero-header p {
+      font-size: 18px;
+    }
+     /* Main application container */
+    #app {
+      max-width: 1000px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #dfd9d9;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(101, 168, 178, 0.455);
+      margin-top: -7px;
+      position: relative;
+      z-index: 1;
+    }
+    label {
+      font-weight: bold;
+    }
+      /* Select dropdown styling */
+    select {
+      padding: 8px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: 1px solid #f3eded;
+      margin-bottom: 20px;
+    }
+        /* Table styling */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th,
+    td {
+      padding: 10px;
+      border: 1px solid #9e9d9d;
+      text-align: left;
+    }
+    th {
+      background-color: #7c7979;
+      font-weight: bold;
+      width: 100%;
+    }
+    /* Chart container styling */
+    #pie-chart-container {
+      width: 100%;
+      margin-bottom: 30px;
+      flex: 1;
+      margin: 20px;
+    }
+    #bar-chart-container {
+      width: 100%;
+      margin-bottom: 20px;
+      flex: 1;
+      margin-top: 50px;
+    }
+    .CloseTable {
+      display: none;
+    }
+    .OpenTable {
+      display: block;
+    }
+    .ClosePie {
+      display: none;
+    }
+    .OpenPie {
+      display: block;
+    }
+    .CloseBar {
+      display: none;
+    }
+    .OpenBar {
+      display: block;
+    }
+    .menu {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .menu {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .menu-button {
+      margin: 0 40px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #587284a0;
+      color: rgb(5, 5, 5);
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .menu-button:hover {
+      background-color: #606b87;
+    }
+  </style>
+</head>
+<body>
+  <div id="hero-header">
+    <h1>Welcome to User Management System</h1>
+    <p>Manage your users efficiently with our system</p>
+  </div>
+    <!-- Main application container -->
+  <div id="app">
+      <!-- Menu -->
+    <div class="menu">
+      <input class="menu-button" type="button" value="Table" v-on:click="showTableHandle">
+      <input class="menu-button" type="button" value="Pie Chart" v-on:click="showPieChartHandle">
+      <input class="menu-button" type="button" value="Bar Chart" v-on:click="showBarGraphHandle">
+    </div>
+      <!-- Table -->
+    <div v-bind:class="{ OpenTable: showTable, CloseTable: !showTable }">
+      <label for="designation">Select Designation:</label>
+      <select v-model="selectedDesignation" @change="filterUsers">
+        <option value="nothing">Please select</option>
+        <option value="">All</option>
+        <option v-for="designation in designations" :value="designation">{{ designation }}</option>
+      </select>
+      <table border="1">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Designation</th>
+            <th>Department</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="user in filteredUsers" :key="user.name">
+            <td>{{ user.name + " "+ user.surname }}</td>
+            <td>{{ user.designation }}</td>
+            <td>{{ user.department }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+     <!-- Pie Chart -->
+    <div v-bind:class="{ OpenPie: showPieChart, ClosePie: !showPieChart }" id="pie-chart-container">
+      <canvas id="pie-chart"></canvas>
+    </div>
+        <!-- Bar Graph -->
+    <div v-bind:class="{ OpenBar: showBarGraph, CloseBar: !showBarGraph }" id="bar-chart-container">
+      <canvas id="bar-chart"></canvas>
+    </div>
+  </div>
+    <!-- Script section -->
+  <script setup>
+    // function for table 
+    const showTablee = true; 
+    const notShowTable = false; 
+    function showTableHandle() {
+      showTablee = true; 
+      notShowBarGraph = true;
+      notShowPieChart = true
+    }
+    // function for pie Chart 
+ const showPieCharts = true;
+    const notShowPieChart = false;
+    function showPieChartHandle() {
+      showPieCharts = true;
+
+    }
+    // function for Bar Graph
+    const showBarGraphs = true;
+    const notShowBarGraph = false;
+    function showBarGraphHandle() {
+      showBarGraphs = true;
+      notShowBarGraph = false;
+    }
+     // Vue instance
+    new Vue({
+      el: '#app',
+      data: {
+        users: [],
+        selectedDesignation: '',
+        designations: [],
+        showTable: false,
+        showPieChart: false,
+        showBarGraph: false,
+      },
+      // Computed property to filter users based on selected designation
+      computed: {
+        filteredUsers() {
+          if (this.selectedDesignation === '') {
+            return this.users;
+          } else {
+            return this.users.filter(user => user.designation === this.selectedDesignation);
+          }
+        }
+      },
+      methods: {
+          // Method to fetch user data from server
+        fetchUsers() {
+          fetch('/users.json')
+            .then(response => response.json())
+            .then(data => {
+              this.users = data;
+              this.populateDesignations();
+            })
+            .catch(error => {
+              console.error('Error fetching user data:', error);
+            });
+        },
+        // Method to populate unique designations
+        populateDesignations() {
+          this.designations = [...new Set(this.users.map(user => user.designation))];
+        },
+        // Method to handle table visibility toggle
+        showTableHandle() {
+          this.showTable = !this.showTable;
+          console.log('hey')
+        },
+         // Method to handle pie chart visibility toggle
+        showPieChartHandle() {
+          this.showPieChart = !this.showPieChart;
+          console.log('Pie')
+        },
+         // Method to handle bar graph visibility toggle
+        showBarGraphHandle() {
+          this.showBarGraph = !this.showBarGraph;
+          console.log('Bar')
+        },
+
+        filterUsers() {
+          
+        },
+         // Method to draw pie chart
+        drawPieChart() {
+          fetch('/pieChart.json')
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Failed to fetch pie chart data');
+              }
+              return response.json();
+            })
+            .then(data => {
+              const years = data.map(item => item.year);
+              const numInstalls = data.map(item => item.numInstalls);
+
+              const ctx = document.getElementById('pie-chart').getContext('2d');
+              new Chart(ctx, {
+                type: 'pie',
+                data: {
+                  labels: years,
+                  datasets: [{
+                    data: numInstalls,
+                    backgroundColor: [
+                      'rgba(255, 99, 132, 0.5)',
+                      'rgba(54, 162, 235, 0.5)',
+                      'rgba(255, 206, 86, 0.5)',
+                      'rgba(75, 192, 192, 0.5)',
+                      'rgba(153, 102, 255, 0.5)'
+                    ],
+                    borderWidth: 1
+                  }]
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  Title: {
+                    display: true,
+                    text: 'Pie Chart - Installations Over Years'
+                  }
+                }
+              });
+            })
+            .catch(error => {
+              console.error('Error fetching pie chart data:', error);
+            });
+        },
+          // Method to draw bar graph
+        drawBarGraph() {
+          fetch('/barGraph.json')
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Failed to fetch bar chart data');
+              }
+              return response.json();
+            })
+            .then(data => {
+              const months = data.map(item => item.month);
+              const numInstalls = data.map(item => item.numInstalls);
+              const ctx = document.getElementById('bar-chart').getContext('2d');
+              new Chart(ctx, {
+                type: 'bar',
+                data: {
+                  labels: months,
+                  datasets: [{
+                    label: 'Number of Installs',
+                    data: numInstalls,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(50, 162, 235, 1)',
+                    borderWidth: 1
+                  }]
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    xAxes: [{
+                      type: 'time',
+                      time: {
+                        unit: 'month'
+                      },
+                      distribution: 'series'
+                    }],
+                    yAxes: [{
+                      ticks: {
+                        beginAtZero: true
+                      }
+                    }]
+                  },
+                  title: {
+                    display: true,
+                    text: 'Bar Chart - Installs Over Months'
+                  }
+                }
+              });
+            })
+            .catch(error => {
+              console.error('Error fetching bar chart data:', error);
+            });
+        },
+        fetchDesignations() {
+        }
+      },
+      mounted() {
+         // Fetch user data, designations, and draw charts when the component is mounted
+        this.fetchUsers();
+        this.fetchDesignations();
+        this.drawPieChart();
+        this.drawBarGraph();
+        this.fetch
+      }
+    });
+  </script>
+</body>
+</html>
